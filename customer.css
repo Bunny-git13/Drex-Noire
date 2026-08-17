@@ -36,7 +36,9 @@ button{
 }
 
 
-/* LOADER */
+/* =====================================================
+   LOADER
+   ===================================================== */
 
 #loader{
     position:fixed;
@@ -77,7 +79,9 @@ button{
 }
 
 
-/* TOP */
+/* =====================================================
+   TOP BAR
+   ===================================================== */
 
 .topbar{
     position:sticky;
@@ -106,6 +110,11 @@ button{
     padding:9px 12px;
     font-size:9px;
     letter-spacing:1px;
+    transition:.25s ease;
+}
+
+.cart-btn:active{
+    transform:scale(.94);
 }
 
 .cart-btn b{
@@ -116,7 +125,9 @@ button{
 }
 
 
-/* PAGES */
+/* =====================================================
+   PAGES
+   ===================================================== */
 
 .page{
     display:none;
@@ -132,6 +143,7 @@ button{
         opacity:0;
         transform:translateY(10px);
     }
+
     to{
         opacity:1;
         transform:none;
@@ -139,7 +151,9 @@ button{
 }
 
 
-/* HERO */
+/* =====================================================
+   HERO
+   ===================================================== */
 
 .hero{
     min-height:calc(100vh - 140px);
@@ -184,7 +198,9 @@ button{
 }
 
 
-/* 3D OBJECT */
+/* =====================================================
+   3D OBJECT
+   ===================================================== */
 
 .hero-3d{
     height:260px;
@@ -212,15 +228,24 @@ button{
 
 @keyframes float3d{
     0%,100%{
-        transform:rotateX(15deg) rotateY(-20deg) translateY(0);
+        transform:
+            rotateX(15deg)
+            rotateY(-20deg)
+            translateY(0);
     }
+
     50%{
-        transform:rotateX(-12deg) rotateY(25deg) translateY(-15px);
+        transform:
+            rotateX(-12deg)
+            rotateY(25deg)
+            translateY(-15px);
     }
 }
 
 
-/* BUTTONS */
+/* =====================================================
+   BUTTONS
+   ===================================================== */
 
 .black-btn{
     border:0;
@@ -231,11 +256,18 @@ button{
     font-size:9px;
     font-weight:bold;
     letter-spacing:1px;
-    transition:.25s;
+    transition:
+        transform .25s ease,
+        background .25s ease,
+        box-shadow .25s ease;
 }
 
 .black-btn:active{
     transform:scale(.97);
+}
+
+.black-btn:hover{
+    box-shadow:0 8px 25px #0002;
 }
 
 .white-btn{
@@ -248,6 +280,11 @@ button{
     font-weight:bold;
     letter-spacing:1px;
     margin-top:9px;
+    transition:.25s ease;
+}
+
+.white-btn:active{
+    transform:scale(.97);
 }
 
 .full{
@@ -255,7 +292,9 @@ button{
 }
 
 
-/* SECTIONS */
+/* =====================================================
+   SECTIONS
+   ===================================================== */
 
 .section{
     padding:70px 18px;
@@ -282,7 +321,9 @@ button{
 }
 
 
-/* PRODUCTS */
+/* =====================================================
+   PRODUCTS
+   ===================================================== */
 
 .products{
     display:grid;
@@ -299,7 +340,9 @@ button{
     background:#fff;
     overflow:hidden;
     border:1px solid #e1e1df;
-    transition:.3s;
+    transition:
+        transform .3s ease,
+        box-shadow .3s ease;
 }
 
 .product:active{
@@ -316,7 +359,7 @@ button{
     width:100%;
     height:100%;
     object-fit:cover;
-    transition:.5s;
+    transition:.5s ease;
 }
 
 .product:hover img{
@@ -360,10 +403,21 @@ button{
     min-height:38px;
     font-size:8px;
     font-weight:bold;
+    transition:.25s ease;
+}
+
+.product-action:active{
+    transform:scale(.96);
+}
+
+.product-action:disabled{
+    opacity:.4;
 }
 
 
-/* FILTERS */
+/* =====================================================
+   FILTERS
+   ===================================================== */
 
 .filters{
     display:flex;
@@ -378,6 +432,7 @@ button{
     background:#fff;
     padding:13px;
     outline:none;
+    transition:.25s ease;
 }
 
 .filters input{
@@ -388,8 +443,15 @@ button{
     width:95px;
 }
 
+.filters input:focus,
+.filters select:focus{
+    border-color:#080808;
+}
 
-/* PRODUCT DETAIL */
+
+/* =====================================================
+   PRODUCT DETAIL
+   ===================================================== */
 
 .back{
     border:0;
@@ -397,12 +459,18 @@ button{
     padding:25px 20px;
     font-size:9px;
     font-weight:bold;
+    transition:.2s ease;
+}
+
+.back:active{
+    transform:translateX(-4px);
 }
 
 .detail-image{
     width:100%;
     aspect-ratio:1/1.2;
     background:#eee;
+    overflow:hidden;
 }
 
 .detail-image img{
@@ -442,7 +510,138 @@ button{
 }
 
 
-/* CART */
+/* =====================================================
+   SIZE SELECTOR
+   ===================================================== */
+
+.size-selector{
+    margin:28px 0 25px;
+}
+
+.size-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+}
+
+.size-title{
+    font-size:9px;
+    font-weight:900;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.size-selected{
+    font-size:9px;
+    color:#777;
+    min-height:12px;
+}
+
+.size-options{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:7px;
+}
+
+.size-btn{
+    position:relative;
+    min-height:48px;
+    border:1px solid #d8d8d5;
+    background:#fff;
+    color:#080808;
+    font-size:10px;
+    font-weight:bold;
+    letter-spacing:1px;
+    overflow:hidden;
+    transition:
+        background .25s ease,
+        color .25s ease,
+        border-color .25s ease,
+        transform .18s ease,
+        box-shadow .25s ease;
+}
+
+.size-btn::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:#080808;
+    transform:scaleX(0);
+    transform-origin:right;
+    transition:transform .3s ease;
+    z-index:0;
+}
+
+.size-btn span{
+    position:relative;
+    z-index:2;
+}
+
+.size-btn:hover{
+    border-color:#080808;
+    transform:translateY(-2px);
+}
+
+.size-btn:active{
+    transform:scale(.93);
+}
+
+.size-btn.selected{
+    background:#080808;
+    color:#fff;
+    border-color:#080808;
+    box-shadow:0 7px 18px #0002;
+}
+
+.size-btn.selected::after{
+    transform:scaleX(1);
+    transform-origin:left;
+}
+
+.size-btn.disabled,
+.size-btn:disabled{
+    color:#aaa;
+    background:#f4f4f2;
+    border-color:#e5e5e2;
+    cursor:not-allowed;
+    text-decoration:line-through;
+    opacity:.6;
+}
+
+.size-btn.disabled:hover,
+.size-btn:disabled:hover{
+    transform:none;
+}
+
+.size-error{
+    color:#9a0000;
+    font-size:9px;
+    margin-top:9px;
+    min-height:12px;
+    animation:sizeError .25s ease;
+}
+
+@keyframes sizeError{
+    0%{
+        opacity:0;
+        transform:translateX(-5px);
+    }
+
+    50%{
+        transform:translateX(5px);
+    }
+
+    100%{
+        opacity:1;
+        transform:none;
+    }
+}
+
+
+/* =====================================================
+   CART
+   ===================================================== */
 
 .overlay{
     display:none;
@@ -474,6 +673,7 @@ button{
     from{
         transform:translateY(100%);
     }
+
     to{
         transform:none;
     }
@@ -486,6 +686,11 @@ button{
     border:0;
     background:none;
     font-size:28px;
+    transition:.2s ease;
+}
+
+.close:active{
+    transform:rotate(90deg) scale(.9);
 }
 
 .drawer h2{
@@ -534,7 +739,9 @@ button{
 }
 
 
-/* CHECKOUT */
+/* =====================================================
+   CHECKOUT
+   ===================================================== */
 
 .checkout{
     padding:0 18px 60px;
@@ -561,12 +768,24 @@ button{
     outline:none;
     margin-bottom:9px;
     font-size:12px;
+    transition:.25s ease;
+}
+
+.checkout-card input:focus,
+.checkout-card textarea:focus{
+    border-color:#080808;
+    background:#fff;
 }
 
 .checkout-card textarea{
     min-height:90px;
     resize:none;
 }
+
+
+/* =====================================================
+   PAYMENT
+   ===================================================== */
 
 .payment{
     width:100%;
@@ -575,6 +794,14 @@ button{
     background:#fff;
     padding:15px;
     margin-bottom:8px;
+    transition:
+        border .25s ease,
+        transform .2s ease,
+        box-shadow .25s ease;
+}
+
+.payment:active{
+    transform:scale(.98);
 }
 
 .payment b,
@@ -594,6 +821,7 @@ button{
 
 .payment.selected{
     border:2px solid #080808;
+    box-shadow:0 7px 20px #0001;
 }
 
 .payment:disabled{
@@ -639,7 +867,9 @@ button{
 }
 
 
-/* ORDERS */
+/* =====================================================
+   ORDERS
+   ===================================================== */
 
 #ordersContainer{
     padding-bottom:50px;
@@ -701,7 +931,9 @@ button{
 }
 
 
-/* ACCOUNT */
+/* =====================================================
+   ACCOUNT
+   ===================================================== */
 
 .account{
     margin:70px 18px;
@@ -734,7 +966,9 @@ button{
 }
 
 
-/* AUTH */
+/* =====================================================
+   AUTH
+   ===================================================== */
 
 .modal{
     display:none;
@@ -771,6 +1005,12 @@ button{
     padding:15px;
     margin-bottom:9px;
     outline:none;
+    transition:.25s ease;
+}
+
+.auth input:focus{
+    border-color:#080808;
+    background:#fff;
 }
 
 .error{
@@ -780,7 +1020,9 @@ button{
 }
 
 
-/* BOTTOM NAV */
+/* =====================================================
+   BOTTOM NAV
+   ===================================================== */
 
 .bottom-nav{
     position:fixed;
@@ -801,6 +1043,11 @@ button{
     color:#666;
     font-size:7px;
     font-weight:bold;
+    transition:.2s ease;
+}
+
+.bottom-nav button:active{
+    transform:scale(.92);
 }
 
 .bottom-nav span{
@@ -811,7 +1058,9 @@ button{
 }
 
 
-/* TOAST */
+/* =====================================================
+   TOAST
+   ===================================================== */
 
 #toast{
     position:fixed;
@@ -834,7 +1083,9 @@ button{
 }
 
 
-/* DESKTOP */
+/* =====================================================
+   DESKTOP
+   ===================================================== */
 
 @media(min-width:800px){
 
@@ -903,6 +1154,10 @@ button{
         display:grid;
         grid-template-columns:1.4fr 1fr;
         gap:20px;
+    }
+
+    .size-options{
+        grid-template-columns:repeat(6,1fr);
     }
 
 }
