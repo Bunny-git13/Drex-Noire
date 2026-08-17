@@ -13,9 +13,13 @@
     --line:#dededb;
 }
 
+html{
+    scroll-behavior:smooth;
+}
+
 body{
     background:var(--light);
-    color:#080808;
+    color:var(--black);
     font-family:Arial,sans-serif;
     padding-bottom:78px;
 }
@@ -29,6 +33,10 @@ select{
 
 button{
     cursor:pointer;
+}
+
+button:focus{
+    outline:none;
 }
 
 .hidden{
@@ -73,9 +81,13 @@ button{
 }
 
 @keyframes pulse{
+
     50%{
-        transform:rotate(5deg) scale(1.08);
+        transform:
+            rotate(5deg)
+            scale(1.08);
     }
+
 }
 
 
@@ -110,11 +122,11 @@ button{
     padding:9px 12px;
     font-size:9px;
     letter-spacing:1px;
-    transition:.25s ease;
+    transition:.25s;
 }
 
 .cart-btn:active{
-    transform:scale(.94);
+    transform:scale(.95);
 }
 
 .cart-btn b{
@@ -139,6 +151,7 @@ button{
 }
 
 @keyframes pageIn{
+
     from{
         opacity:0;
         transform:translateY(10px);
@@ -148,6 +161,7 @@ button{
         opacity:1;
         transform:none;
     }
+
 }
 
 
@@ -227,6 +241,7 @@ button{
 }
 
 @keyframes float3d{
+
     0%,100%{
         transform:
             rotateX(15deg)
@@ -240,6 +255,7 @@ button{
             rotateY(25deg)
             translateY(-15px);
     }
+
 }
 
 
@@ -257,17 +273,17 @@ button{
     font-weight:bold;
     letter-spacing:1px;
     transition:
-        transform .25s ease,
-        background .25s ease,
-        box-shadow .25s ease;
+        transform .25s,
+        background .25s,
+        box-shadow .25s;
 }
 
 .black-btn:active{
     transform:scale(.97);
 }
 
-.black-btn:hover{
-    box-shadow:0 8px 25px #0002;
+.black-btn.full{
+    width:100%;
 }
 
 .white-btn{
@@ -280,11 +296,6 @@ button{
     font-weight:bold;
     letter-spacing:1px;
     margin-top:9px;
-    transition:.25s ease;
-}
-
-.white-btn:active{
-    transform:scale(.97);
 }
 
 .full{
@@ -327,7 +338,8 @@ button{
 
 .products{
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:
+        repeat(2,minmax(0,1fr));
     gap:9px;
     padding:0 18px 60px;
 }
@@ -359,7 +371,7 @@ button{
     width:100%;
     height:100%;
     object-fit:cover;
-    transition:.5s ease;
+    transition:.5s;
 }
 
 .product:hover img{
@@ -403,15 +415,20 @@ button{
     min-height:38px;
     font-size:8px;
     font-weight:bold;
-    transition:.25s ease;
+    letter-spacing:1px;
+    transition:
+        transform .2s,
+        background .25s;
 }
 
 .product-action:active{
-    transform:scale(.96);
+    transform:scale(.97);
 }
 
 .product-action:disabled{
-    opacity:.4;
+    background:#c8c8c5;
+    color:#fff;
+    cursor:not-allowed;
 }
 
 
@@ -432,7 +449,6 @@ button{
     background:#fff;
     padding:13px;
     outline:none;
-    transition:.25s ease;
 }
 
 .filters input{
@@ -441,11 +457,6 @@ button{
 
 .filters select{
     width:95px;
-}
-
-.filters input:focus,
-.filters select:focus{
-    border-color:#080808;
 }
 
 
@@ -459,7 +470,8 @@ button{
     padding:25px 20px;
     font-size:9px;
     font-weight:bold;
-    transition:.2s ease;
+    letter-spacing:1px;
+    transition:.2s;
 }
 
 .back:active{
@@ -515,127 +527,261 @@ button{
    ===================================================== */
 
 .size-selector{
-    margin:28px 0 25px;
+    margin:
+        30px 0
+        27px;
 }
 
-.size-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-}
-
-.size-title{
-    font-size:9px;
-    font-weight:900;
-    letter-spacing:2px;
-    text-transform:uppercase;
-}
-
-.size-selected{
-    font-size:9px;
-    color:#777;
-    min-height:12px;
+.size-selector-title{
+    display:block;
+    color:#080808;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:2.5px;
+    margin-bottom:14px;
 }
 
 .size-options{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:7px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
 }
+
+
+/* Individual size */
 
 .size-btn{
     position:relative;
-    min-height:48px;
-    border:1px solid #d8d8d5;
-    background:#fff;
+
+    width:54px;
+    height:50px;
+
+    border:1px solid #cfcfcb;
+    background:#f8f8f6;
     color:#080808;
-    font-size:10px;
-    font-weight:bold;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:11px;
+    font-weight:700;
     letter-spacing:1px;
+
     overflow:hidden;
+
     transition:
+        transform .22s cubic-bezier(.2,.8,.2,1),
         background .25s ease,
         color .25s ease,
         border-color .25s ease,
-        transform .18s ease,
         box-shadow .25s ease;
 }
 
-.size-btn::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:#080808;
-    transform:scaleX(0);
-    transform-origin:right;
-    transition:transform .3s ease;
-    z-index:0;
-}
 
-.size-btn span{
-    position:relative;
-    z-index:2;
-}
+/* Hover */
 
 .size-btn:hover{
     border-color:#080808;
     transform:translateY(-2px);
 }
 
+
+/* Press */
+
 .size-btn:active{
-    transform:scale(.93);
+    transform:scale(.90);
 }
+
+
+/* Selected */
 
 .size-btn.selected{
+
     background:#080808;
     color:#fff;
+
     border-color:#080808;
-    box-shadow:0 7px 18px #0002;
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,.16);
+
+    transform:translateY(-2px);
+
+    animation:
+        sizePop .3s
+        cubic-bezier(.2,.8,.2,1);
 }
+
+
+/* Selection line */
 
 .size-btn.selected::after{
-    transform:scaleX(1);
-    transform-origin:left;
+
+    content:"";
+
+    position:absolute;
+
+    left:8px;
+    right:8px;
+    bottom:5px;
+
+    height:2px;
+
+    background:#fff;
+
+    transform-origin:center;
+
+    animation:
+        sizeLine .25s ease
+        forwards;
+
 }
 
-.size-btn.disabled,
-.size-btn:disabled{
-    color:#aaa;
-    background:#f4f4f2;
-    border-color:#e5e5e2;
-    cursor:not-allowed;
-    text-decoration:line-through;
-    opacity:.6;
-}
 
-.size-btn.disabled:hover,
-.size-btn:disabled:hover{
-    transform:none;
-}
+@keyframes sizePop{
 
-.size-error{
-    color:#9a0000;
-    font-size:9px;
-    margin-top:9px;
-    min-height:12px;
-    animation:sizeError .25s ease;
-}
-
-@keyframes sizeError{
     0%{
-        opacity:0;
-        transform:translateX(-5px);
+        transform:scale(.86);
     }
 
-    50%{
-        transform:translateX(5px);
+    60%{
+        transform:scale(1.06);
     }
 
     100%{
+        transform:scale(1);
+    }
+
+}
+
+
+@keyframes sizeLine{
+
+    from{
+        transform:scaleX(0);
+        opacity:0;
+    }
+
+    to{
+        transform:scaleX(1);
+        opacity:1;
+    }
+
+}
+
+
+/* Unavailable size */
+
+.size-btn.unavailable{
+
+    opacity:.32;
+
+    background:#eee;
+
+    color:#888;
+
+    text-decoration:
+        line-through;
+
+    cursor:not-allowed;
+
+    transform:none!important;
+
+    box-shadow:none!important;
+
+}
+
+
+/* Size hint */
+
+.size-hint{
+
+    min-height:16px;
+
+    margin-top:10px;
+
+    color:#999;
+
+    font-size:8px;
+
+    letter-spacing:1px;
+
+    text-transform:uppercase;
+
+    transition:
+        color .25s ease,
+        transform .25s ease;
+
+}
+
+.size-hint.selected{
+
+    color:#080808;
+
+    animation:
+        hintIn .25s ease;
+
+}
+
+.size-hint.error{
+
+    color:#9b0000;
+
+    animation:
+        hintShake .3s ease;
+
+}
+
+
+@keyframes hintIn{
+
+    from{
+        opacity:0;
+        transform:translateY(4px);
+    }
+
+    to{
         opacity:1;
         transform:none;
     }
+
+}
+
+
+@keyframes hintShake{
+
+    0%,100%{
+        transform:translateX(0);
+    }
+
+    25%{
+        transform:translateX(-4px);
+    }
+
+    75%{
+        transform:translateX(4px);
+    }
+
+}
+
+
+/* Add button after size selection */
+
+.detail-add-button{
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease,
+        background .25s ease;
+
+}
+
+.detail-add-button.ready{
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,.15);
+
 }
 
 
@@ -670,6 +816,7 @@ button{
 }
 
 @keyframes drawerIn{
+
     from{
         transform:translateY(100%);
     }
@@ -677,6 +824,7 @@ button{
     to{
         transform:none;
     }
+
 }
 
 .close{
@@ -686,11 +834,6 @@ button{
     border:0;
     background:none;
     font-size:28px;
-    transition:.2s ease;
-}
-
-.close:active{
-    transform:rotate(90deg) scale(.9);
 }
 
 .drawer h2{
@@ -700,7 +843,8 @@ button{
 
 .cart-item{
     display:grid;
-    grid-template-columns:65px 1fr auto;
+    grid-template-columns:
+        65px 1fr auto;
     gap:10px;
     padding:12px 0;
     border-bottom:1px solid #eee;
@@ -713,6 +857,10 @@ button{
     background:#eee;
 }
 
+.cart-item-info{
+    min-width:0;
+}
+
 .cart-item h4{
     font-size:11px;
 }
@@ -723,11 +871,44 @@ button{
     margin-top:6px;
 }
 
+.cart-size{
+
+    display:inline-block;
+
+    margin-top:7px;
+
+    font-size:8px;
+    font-weight:bold;
+
+    letter-spacing:1px;
+
+    padding:5px 7px;
+
+    background:#080808;
+    color:#fff;
+
+}
+
 .remove{
     border:0;
     background:none;
     color:#900;
     font-size:8px;
+}
+
+.empty-cart{
+
+    min-height:150px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:#999;
+
+    font-size:9px;
+    letter-spacing:2px;
+
 }
 
 .cart-total,
@@ -768,24 +949,12 @@ button{
     outline:none;
     margin-bottom:9px;
     font-size:12px;
-    transition:.25s ease;
-}
-
-.checkout-card input:focus,
-.checkout-card textarea:focus{
-    border-color:#080808;
-    background:#fff;
 }
 
 .checkout-card textarea{
     min-height:90px;
     resize:none;
 }
-
-
-/* =====================================================
-   PAYMENT
-   ===================================================== */
 
 .payment{
     width:100%;
@@ -794,14 +963,7 @@ button{
     background:#fff;
     padding:15px;
     margin-bottom:8px;
-    transition:
-        border .25s ease,
-        transform .2s ease,
-        box-shadow .25s ease;
-}
-
-.payment:active{
-    transform:scale(.98);
+    transition:.25s;
 }
 
 .payment b,
@@ -821,7 +983,6 @@ button{
 
 .payment.selected{
     border:2px solid #080808;
-    box-shadow:0 7px 20px #0001;
 }
 
 .payment:disabled{
@@ -861,9 +1022,22 @@ button{
 .summary-item{
     display:flex;
     justify-content:space-between;
+    gap:15px;
     border-bottom:1px solid #eee;
     padding:12px 0;
     font-size:10px;
+}
+
+.summary-item > span{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.summary-size{
+    color:#777;
+    font-size:8px;
+    letter-spacing:1px;
 }
 
 
@@ -885,6 +1059,7 @@ button{
 .order-top{
     display:flex;
     justify-content:space-between;
+    gap:15px;
 }
 
 .order-id{
@@ -928,6 +1103,23 @@ button{
 .order-body p{
     font-size:10px;
     margin-bottom:8px;
+}
+
+.order-size{
+
+    display:inline-block;
+
+    margin-left:5px;
+
+    font-size:7px;
+
+    letter-spacing:1px;
+
+    padding:4px 6px;
+
+    background:#080808;
+    color:#fff;
+
 }
 
 
@@ -1005,12 +1197,6 @@ button{
     padding:15px;
     margin-bottom:9px;
     outline:none;
-    transition:.25s ease;
-}
-
-.auth input:focus{
-    border-color:#080808;
-    background:#fff;
 }
 
 .error{
@@ -1034,7 +1220,8 @@ button{
     background:#fff;
     border-top:1px solid #ddd;
     display:grid;
-    grid-template-columns:repeat(5,1fr);
+    grid-template-columns:
+        repeat(5,1fr);
 }
 
 .bottom-nav button{
@@ -1043,7 +1230,7 @@ button{
     color:#666;
     font-size:7px;
     font-weight:bold;
-    transition:.2s ease;
+    transition:.2s;
 }
 
 .bottom-nav button:active{
@@ -1067,7 +1254,8 @@ button{
     left:50%;
     bottom:90px;
     z-index:5000;
-    transform:translate(-50%,20px);
+    transform:
+        translate(-50%,20px);
     background:#080808;
     color:#fff;
     padding:13px 18px;
@@ -1079,7 +1267,8 @@ button{
 
 #toast.show{
     opacity:1;
-    transform:translate(-50%,0);
+    transform:
+        translate(-50%,0);
 }
 
 
@@ -1121,7 +1310,8 @@ button{
     }
 
     .products{
-        grid-template-columns:repeat(4,1fr);
+        grid-template-columns:
+            repeat(4,1fr);
         padding-left:7%;
         padding-right:7%;
     }
@@ -1152,12 +1342,14 @@ button{
         max-width:1100px;
         margin:auto;
         display:grid;
-        grid-template-columns:1.4fr 1fr;
+        grid-template-columns:
+            1.4fr 1fr;
         gap:20px;
     }
 
-    .size-options{
-        grid-template-columns:repeat(6,1fr);
+    .size-btn{
+        width:58px;
+        height:52px;
     }
 
 }
