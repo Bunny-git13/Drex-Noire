@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080808">
+<title>Drex Noiré</title>
+<link rel="stylesheet" href="customer.css">
+</head>
+
+<body>
+
+<div id="loader">
+    <div class="loader-mark">DN</div>
+    <span>DREX NOIRÉ</span>
+</div>
+
+<header class="topbar">
+    <button class="brand" onclick="showPage('home')">DREX NOIRÉ</button>
+    <button class="cart-btn" onclick="openCart()">BAG <b id="cartCount">0</b></button>
+</header>
+
+<main id="homePage" class="page active">
+
+    <section class="hero">
+        <div class="hero-copy">
+            <small>COLLECTION 001</small>
+            <h1>LESS.<br><i>MORE.</i></h1>
+            <p>Minimal pieces. Refined details. Designed for those who value distinction.</p>
+            <button class="black-btn" onclick="showPage('shop')">SHOP COLLECTION</button>
+        </div>
+
+        <div class="hero-3d">
+            <div class="dn-object">DN</div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <small>SELECTED</small>
+            <h2>Featured</h2>
+        </div>
+        <div id="featuredProducts" class="products"></div>
+    </section>
+
+</main>
+
+
+<main id="shopPage" class="page">
+
+    <div class="page-head">
+        <small>THE COLLECTION</small>
+        <h1>Shop</h1>
+    </div>
+
+    <div class="filters">
+        <input id="searchInput" type="search" placeholder="Search products...">
+
+        <select id="categoryFilter">
+            <option value="all">All</option>
+            <option value="Hoodie">Hoodies</option>
+            <option value="T-Shirt">T-Shirts</option>
+            <option value="Jacket">Jackets</option>
+            <option value="Pants">Pants</option>
+            <option value="Accessories">Accessories</option>
+        </select>
+    </div>
+
+    <div id="shopProducts" class="products"></div>
+
+</main>
+
+
+<main id="productPage" class="page">
+    <button class="back" onclick="showPage('shop')">← BACK</button>
+    <div id="productDetail"></div>
+</main>
+
+
+<main id="checkoutPage" class="page">
+
+    <div class="page-head">
+        <small>SECURE CHECKOUT</small>
+        <h1>Checkout</h1>
+    </div>
+
+    <section class="checkout">
+
+        <div class="checkout-card">
+
+            <h3>Delivery</h3>
+
+            <input id="checkoutName" placeholder="Full name">
+            <input id="checkoutEmail" type="email" placeholder="Email">
+            <input id="checkoutPhone" type="tel" placeholder="Phone number">
+            <textarea id="checkoutAddress" placeholder="Full address"></textarea>
+            <input id="checkoutCity" placeholder="City">
+            <input id="checkoutState" placeholder="State">
+            <input id="checkoutPin" inputmode="numeric" placeholder="PIN code">
+
+            <h3>Payment</h3>
+
+            <button id="upiButton" class="payment" onclick="selectPayment('UPI')">
+                <b>UPI</b>
+                <span>Pay using your UPI app</span>
+            </button>
+
+            <button id="codButton" class="payment" onclick="selectPayment('COD')">
+                <b>Cash on Delivery</b>
+                <span id="codMessage">Available for orders up to ₹9,999</span>
+            </button>
+
+            <div id="upiBox" class="upi-box hidden">
+                <small>PAY TO</small>
+                <b id="upiDisplayName">Drex Noiré</b>
+                <span id="upiDisplayId">Loading...</span>
+
+                <button class="black-btn full" onclick="openUPI()">
+                    OPEN UPI APP
+                </button>
+
+                <p>Payment is manually verified after your order.</p>
+            </div>
+
+        </div>
+
+        <div class="checkout-card summary">
+            <h3>Your Order</h3>
+            <div id="checkoutItems"></div>
+
+            <div class="total">
+                <span>Total</span>
+                <b id="checkoutTotal">₹0</b>
+            </div>
+
+            <button class="black-btn full" onclick="placeOrder()">
+                PLACE ORDER
+            </button>
+        </div>
+
+    </section>
+
+</main>
+
+
+<main id="ordersPage" class="page">
+
+    <div class="page-head">
+        <small>YOUR PURCHASES</small>
+        <h1>Orders</h1>
+    </div>
+
+    <div id="ordersContainer"></div>
+
+</main>
+
+
+<main id="accountPage" class="page">
+
+    <div class="account">
+
+        <div class="dn-logo">DN</div>
+
+        <h1 id="accountTitle">Welcome</h1>
+        <p id="accountEmail"></p>
+
+        <div id="loggedOut">
+            <button class="black-btn full" onclick="openAuth('login')">LOGIN</button>
+            <button class="white-btn full" onclick="openAuth('signup')">CREATE ACCOUNT</button>
+        </div>
+
+        <div id="loggedIn" class="hidden">
+            <button class="white-btn full" onclick="showPage('orders')">ORDER HISTORY</button>
+            <button class="black-btn full" onclick="logout()">LOG OUT</button>
+        </div>
+
+    </div>
+
+</main>
+
+
+<div id="cartOverlay" class="overlay">
+    <div class="drawer">
+
+        <button class="close" onclick="closeCart()">×</button>
+
+        <h2>Your Bag</h2>
+
+        <div id="cartItems"></div>
+
+        <div class="cart-total">
+            <span>Total</span>
+            <b id="cartTotal">₹0</b>
+        </div>
+
+        <button class="black-btn full" onclick="openCheckout()">
+            CHECKOUT
+        </button>
+
+    </div>
+</div>
+
+
+<div id="authModal" class="modal">
+
+    <div class="auth">
+
+        <button class="close" onclick="closeAuth()">×</button>
+
+        <div class="dn-logo">DN</div>
+
+        <h2 id="authTitle">Login</h2>
+
+        <div id="signupNameField" class="hidden">
+            <input id="authName" placeholder="Your name">
+        </div>
+
+        <input id="authEmail" type="email" placeholder="Email">
+        <input id="authPassword" type="password" placeholder="Password">
+
+        <button id="authSubmit" class="black-btn full" onclick="submitAuth()">
+            LOGIN
+        </button>
+
+        <p id="authError" class="error"></p>
+
+    </div>
+
+</div>
+
+
+<nav class="bottom-nav">
+
+    <button onclick="showPage('home')">
+        <span>⌂</span>
+        HOME
+    </button>
+
+    <button onclick="showPage('shop')">
+        <span>◇</span>
+        SHOP
+    </button>
+
+    <button onclick="openCart()">
+        <span>□</span>
+        BAG
+    </button>
+
+    <button onclick="showPage('orders')">
+        <span>◷</span>
+        ORDERS
+    </button>
+
+    <button onclick="showPage('account')">
+        <span>○</span>
+        ACCOUNT
+    </button>
+
+</nav>
+
+<div id="toast"></div>
+
+<script type="module" src="customer.js"></script>
+
+</body>
+</html>
