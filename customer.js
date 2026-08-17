@@ -36,6 +36,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 const db = getDatabase(app);
 
@@ -46,21 +47,26 @@ const db = getDatabase(app);
 
 let products = [];
 
-let cart =
-    JSON.parse(
-        localStorage.getItem("drexCart") || "[]"
-    );
+let cart = JSON.parse(
+    localStorage.getItem("drexCart") || "[]"
+);
 
 let currentUser = null;
+
 let selectedPayment = null;
+
 let upiId = "";
 let upiName = "Drex Noiré";
+
 let orders = [];
+
 let authMode = "login";
+
+let selectedProduct = null;
 
 
 /* =====================================================
-   PAGE
+   PAGE NAVIGATION
 ===================================================== */
 
 window.showPage = function(name){
@@ -72,7 +78,9 @@ window.showPage = function(name){
         );
 
     const page =
-        document.getElementById(name + "Page");
+        document.getElementById(
+            name + "Page"
+        );
 
     if(page){
 
@@ -85,8 +93,10 @@ window.showPage = function(name){
 
     }
 
-    if(name === "orders")
+    if(name === "orders"){
         renderOrders();
+    }
+
 };
 
 
@@ -101,15 +111,13 @@ window.addEventListener("load", () => {
         const loader =
             document.getElementById("loader");
 
-        if(loader){
+        if(!loader) return;
 
-            loader.style.opacity = "0";
+        loader.style.opacity = "0";
 
-            setTimeout(() => {
-                loader.remove();
-            }, 500);
-
-        }
+        setTimeout(() => {
+            loader.remove();
+        }, 500);
 
     }, 600);
 
@@ -122,6 +130,7 @@ window.addEventListener("load", () => {
 
 onValue(
     ref(db, "products"),
+
     snapshot => {
 
         const data =
@@ -141,21 +150,16 @@ onValue(
         renderProducts();
 
         /*
-         * Remove cart items whose products
-         * no longer exist.
-         */
-        cart =
-            cart.filter(item =>
-                products.some(
-                    product =>
-                    product.id === item.id
-                )
-            );
+           Important:
+           If an admin changes sizes while
+           customer has the website open,
+           products update automatically.
+        */
 
-        saveCart();
-        updateCartCount();
+        refreshCartProducts();
 
     },
+
     error => {
 
         console.error(error);
@@ -169,11 +173,12 @@ onValue(
 
 
 /* =====================================================
-   UPI
+   UPI SETTINGS
 ===================================================== */
 
 onValue(
     ref(db, "settings/store"),
+
     snapshot => {
 
         const data =
@@ -186,29 +191,33 @@ onValue(
             data.upiName ||
             "Drex Noiré";
 
-        const name =
+        const nameElement =
             document.getElementById(
                 "upiDisplayName"
             );
 
-        const id =
+        const idElement =
             document.getElementById(
                 "upiDisplayId"
             );
 
-        if(name)
-            name.textContent = upiName;
+        if(nameElement){
+            nameElement.textContent =
+                upiName;
+        }
 
-        if(id)
-            id.textContent =
-                upiId || "UPI not configured";
+        if(idElement){
+            idElement.textContent =
+                upiId ||
+                "UPI not configured";
+        }
 
     }
 );
 
 
 /* =====================================================
-   PRODUCTS
+   PRODUCTS RENDERING
 ===================================================== */
 
 function renderProducts(){
@@ -232,7 +241,7 @@ function renderProducts(){
 
 function renderGrid(container, list){
 
-    if(!container)return;
+    if(!container) return;
 
     if(!list.length){
 
@@ -249,11 +258,14 @@ function renderGrid(container, list){
         return;
     }
 
+
     container.innerHTML =
         list.map(product => {
 
             const stock =
-                Number(product.stock || 0);
+                Number(
+                    product.stock || 0
+                );
 
             return `
 
@@ -261,14 +273,14 @@ function renderGrid(container, list){
 
                 <div
                     class="product-image"
-                    onclick="openProduct('${escapeAttr(product.id)}')"
+                    onclick="openProduct('${product.id}')"
                 >
 
                     <img
                         src="${safe(product.image)}"
-                        alt=""
+                        alt="${safe(product.name)}"
                         onerror="
-                            this.src='https://placehold.co/600x800?text=Drex+Noire'
+                            this.src='https://placehold.co/600x750?text=Drex+Noire'
                         "
                     >
 
@@ -289,22 +301,23 @@ function renderGrid(container, list){
                     </div>
 
                     <div class="stock">
+
                         ${
                             stock > 0
                             ? "In stock"
                             : "Sold out"
                         }
+
                     </div>
 
                     <button
                         class="product-action"
-                        onclick="openProduct('${escapeAttr(product.id)}')"
+                        onclick="openProduct('${product.id}')"
                         ${stock <= 0 ? "disabled" : ""}
                     >
                         ${stock > 0
                             ? "VIEW PRODUCT"
-                            : "SOLD OUT"
-                        }
+                            : "SOLD OUT"}
                     </button>
 
                 </div>
@@ -332,32 +345,40 @@ const categoryFilter =
         "categoryFilter"
     );
 
-if(searchInput)
+if(searchInput){
+
     searchInput.addEventListener(
         "input",
         filterProducts
     );
 
-if(categoryFilter)
+}
+
+if(categoryFilter){
+
     categoryFilter.addEventListener(
         "change",
         filterProducts
     );
 
+}
+
 
 function filterProducts(){
 
     const search =
-        (
+        String(
             document.getElementById(
                 "searchInput"
             )?.value || ""
-        ).toLowerCase();
+        )
+        .toLowerCase();
 
     const category =
         document.getElementById(
             "categoryFilter"
         )?.value || "all";
+
 
     const result =
         products.filter(product => {
@@ -381,6 +402,7 @@ function filterProducts(){
 
         });
 
+
     renderGrid(
         document.getElementById(
             "shopProducts"
@@ -392,60 +414,79 @@ function filterProducts(){
 
 
 /* =====================================================
-   SIZE HELPERS
+   NORMALIZE SIZES
 ===================================================== */
-
-/*
- * Supports several possible Firebase formats:
- *
- * sizes: ["S","M","L","XL"]
- *
- * sizes: {
- *    S:true,
- *    M:true,
- *    L:true
- * }
- *
- * sizes: {
- *    S:"S",
- *    M:"M"
- * }
- */
 
 function getProductSizes(product){
 
-    if(!product || product.sizes == null)
-        return [];
+    if(!product) return [];
 
-    const sizes = product.sizes;
+    let sizes = product.sizes;
+
+    if(!sizes) return [];
+
+
+    /*
+       Admin may save sizes as:
+
+       ["S","M","L"]
+
+       OR
+
+       {
+           S:true,
+           M:true,
+           L:true
+       }
+
+       OR
+
+       {
+           S:"S",
+           M:"M",
+           L:"L"
+       }
+    */
+
 
     if(Array.isArray(sizes)){
 
         return sizes
-            .map(size => String(size).trim())
-            .filter(Boolean);
-
-    }
-
-    if(typeof sizes === "object"){
-
-        return Object.entries(sizes)
-            .filter(([key,value]) => {
-
-                return (
-                    value === true ||
-                    value === 1 ||
-                    value === "true" ||
-                    value === key
-                );
-
-            })
-            .map(([key]) =>
-                String(key).trim()
+            .map(size =>
+                String(size).trim()
             )
             .filter(Boolean);
 
     }
+
+
+    if(typeof sizes === "object"){
+
+        return Object.entries(sizes)
+            .filter(
+                ([key,value]) =>
+                    value !== false &&
+                    value !== null &&
+                    value !== ""
+            )
+            .map(
+                ([key,value]) => {
+
+                    if(
+                        value === true ||
+                        value === 1
+                    ){
+                        return key;
+                    }
+
+                    return String(value);
+
+                }
+            )
+            .filter(Boolean);
+
+    }
+
 
     if(typeof sizes === "string"){
 
@@ -456,16 +497,8 @@ function getProductSizes(product){
 
     }
 
+
     return [];
-
-}
-
-
-function normalizeSize(size){
-
-    return String(
-        size || ""
-    ).trim();
 
 }
 
@@ -476,59 +509,45 @@ function normalizeSize(size){
 
 window.openProduct = function(id){
 
-    const p =
+    const product =
         products.find(
-            product =>
-            product.id === id
+            p => p.id === id
         );
 
-    if(!p)return;
+    if(!product) return;
+
+    selectedProduct = product;
 
     const sizes =
-        getProductSizes(p);
+        getProductSizes(product);
 
     const stock =
-        Number(p.stock || 0);
+        Number(
+            product.stock || 0
+        );
+
 
     let sizeHTML = "";
+
 
     if(sizes.length){
 
         sizeHTML = `
 
-            <div class="size-selector"
-                 style="margin:20px 0">
+            <div class="size-section">
 
-                <div style="
-                    font-size:10px;
-                    font-weight:bold;
-                    letter-spacing:1px;
-                    margin-bottom:10px
-                ">
+                <label class="size-label">
                     SELECT SIZE
-                </div>
+                </label>
 
-                <div style="
-                    display:flex;
-                    flex-wrap:wrap;
-                    gap:8px
-                ">
+                <div class="size-options">
 
                     ${sizes.map(size => `
 
                         <button
                             type="button"
                             class="size-option"
-                            data-size="${escapeAttr(size)}"
-                            onclick="selectSize('${escapeAttr(size)}')"
-                            style="
-                                min-width:48px;
-                                padding:12px 14px;
-                                border:1px solid #ccc;
-                                background:#fff;
-                                cursor:pointer;
-                                font-size:11px;
-                            "
+                            onclick="selectSize(this,'${safeAttr(size)}')"
                         >
                             ${safe(size)}
                         </button>
@@ -539,21 +558,15 @@ window.openProduct = function(id){
 
                 <p
                     id="sizeError"
-                    style="
-                        display:none;
-                        color:#a00000;
-                        font-size:10px;
-                        margin-top:8px
-                    "
-                >
-                    Please select a size.
-                </p>
+                    class="error"
+                ></p>
 
             </div>
 
         `;
 
     }
+
 
     document.getElementById(
         "productDetail"
@@ -562,10 +575,10 @@ window.openProduct = function(id){
         <div class="detail-image">
 
             <img
-                src="${safe(p.image)}"
-                alt=""
+                src="${safe(product.image)}"
+                alt="${safe(product.name)}"
                 onerror="
-                    this.src='https://placehold.co/600x800?text=Drex+Noire'
+                    this.src='https://placehold.co/600x750?text=Drex+Noire'
                 "
             >
 
@@ -574,39 +587,38 @@ window.openProduct = function(id){
         <div class="detail-info">
 
             <small class="detail-category">
-                ${safe(p.category)}
+                ${safe(product.category)}
             </small>
 
             <h1>
-                ${safe(p.name)}
+                ${safe(product.name)}
             </h1>
 
             <div class="detail-price">
-                ₹${money(p.price)}
+                ₹${money(product.price)}
             </div>
 
             <p class="description">
-                ${safe(p.description)}
+                ${safe(product.description)}
             </p>
 
             ${sizeHTML}
 
             <button
-                id="detailAddButton"
                 class="black-btn full"
-                onclick="addSelectedProduct('${escapeAttr(p.id)}')"
+                onclick="addSelectedProductToCart()"
                 ${stock <= 0 ? "disabled" : ""}
             >
-                ${stock > 0
+                ${
+                    stock > 0
                     ? "ADD TO BAG"
                     : "SOLD OUT"
                 }
             </button>
 
         </div>
-    `;
 
-    window.selectedProductSize = "";
+    `;
 
     showPage("product");
 
@@ -617,99 +629,86 @@ window.openProduct = function(id){
    SIZE SELECTION
 ===================================================== */
 
-window.selectedProductSize = "";
+let selectedSize = "";
 
 
-window.selectSize = function(size){
+window.selectSize = function(button, size){
 
-    window.selectedProductSize =
-        normalizeSize(size);
+    selectedSize = size;
 
     document
-        .querySelectorAll(".size-option")
-        .forEach(button => {
+        .querySelectorAll(
+            ".size-option"
+        )
+        .forEach(
+            b =>
+            b.classList.remove(
+                "selected"
+            )
+        );
 
-            const selected =
-                button.dataset.size ===
-                window.selectedProductSize;
-
-            button.style.background =
-                selected
-                ? "#080808"
-                : "#fff";
-
-            button.style.color =
-                selected
-                ? "#fff"
-                : "#111";
-
-            button.style.borderColor =
-                selected
-                ? "#080808"
-                : "#ccc";
-
-        });
+    button.classList.add(
+        "selected"
+    );
 
     const error =
         document.getElementById(
             "sizeError"
         );
 
-    if(error)
-        error.style.display = "none";
+    if(error){
+        error.textContent = "";
+    }
 
 };
 
 
-window.addSelectedProduct = function(id){
+window.addSelectedProductToCart =
+function(){
 
-    const product =
-        products.find(
-            p => p.id === id
-        );
-
-    if(!product)return;
+    if(!selectedProduct) return;
 
     const sizes =
-        getProductSizes(product);
+        getProductSizes(
+            selectedProduct
+        );
+
 
     /*
-     * If admin has specified sizes,
-     * customer MUST select one.
-     */
-    if(sizes.length){
+       If admin has assigned sizes,
+       customer MUST select one.
+    */
 
-        const selected =
-            normalizeSize(
-                window.selectedProductSize
+    if(
+        sizes.length &&
+        !selectedSize
+    ){
+
+        const error =
+            document.getElementById(
+                "sizeError"
             );
 
-        if(!selected){
+        if(error){
 
-            const error =
-                document.getElementById(
-                    "sizeError"
-                );
+            error.textContent =
+                "Please select a size.";
 
-            if(error)
-                error.style.display = "block";
-
-            toast("Please select a size.");
-
-            return;
         }
 
-        addToCart(id, selected);
+        toast(
+            "Please select a size."
+        );
 
-    }else{
-
-        /*
-         * Products without sizes remain
-         * compatible with your old products.
-         */
-        addToCart(id, "");
+        return;
 
     }
+
+
+    addToCart(
+        selectedProduct.id,
+        selectedSize
+    );
 
 };
 
@@ -733,7 +732,9 @@ function updateCartCount(){
     const count =
         cart.reduce(
             (sum, item) =>
-            sum + Number(item.quantity || 0),
+            sum + Number(
+                item.quantity || 0
+            ),
             0
         );
 
@@ -742,8 +743,10 @@ function updateCartCount(){
             "cartCount"
         );
 
-    if(element)
-        element.textContent = count;
+    if(element){
+        element.textContent =
+            count;
+    }
 
 }
 
@@ -751,16 +754,25 @@ function updateCartCount(){
 updateCartCount();
 
 
-window.addToCart = function(id, size = ""){
+window.addToCart = function(
+    id,
+    size = ""
+){
 
     const product =
         products.find(
             p => p.id === id
         );
 
-    if(!product)return;
+    if(!product) return;
 
-    if(Number(product.stock || 0) <= 0){
+
+    const stock =
+        Number(
+            product.stock || 0
+        );
+
+    if(stock <= 0){
 
         toast(
             "This product is sold out."
@@ -770,13 +782,17 @@ window.addToCart = function(id, size = ""){
 
     }
 
+
     const sizes =
         getProductSizes(product);
 
-    size =
-        normalizeSize(size);
 
-    if(sizes.length && !size){
+    if(
+        sizes.length &&
+        !size
+    ){
+
+        openProduct(id);
 
         toast(
             "Please select a size."
@@ -786,27 +802,27 @@ window.addToCart = function(id, size = ""){
 
     }
 
+
     /*
-     * Same product with different sizes
-     * becomes a separate cart item.
-     */
-    const item =
+       Same product with different sizes
+       becomes separate cart entries.
+    */
+
+    const existing =
         cart.find(
             item =>
                 item.id === id &&
-                normalizeSize(item.size) === size
+                String(
+                    item.size || ""
+                ) === String(size || "")
         );
 
-    if(item){
+
+    if(existing){
 
         if(
-            item.quantity <
-            Number(product.stock || 0)
+            existing.quantity >= stock
         ){
-
-            item.quantity++;
-
-        }else{
 
             toast(
                 "Maximum available stock reached."
@@ -816,13 +832,16 @@ window.addToCart = function(id, size = ""){
 
         }
 
+        existing.quantity++;
+
     }else{
 
         cart.push({
 
             id,
 
-            size,
+            size:
+                size || "",
 
             quantity: 1
 
@@ -830,13 +849,14 @@ window.addToCart = function(id, size = ""){
 
     }
 
+
     saveCart();
 
     updateCartCount();
 
     toast(
         size
-        ? `Added to bag — ${size}`
+        ? `${size} added to bag.`
         : "Added to bag."
     );
 
@@ -867,6 +887,10 @@ window.closeCart = function(){
 };
 
 
+/* =====================================================
+   CART RENDER
+===================================================== */
+
 function renderCart(){
 
     const container =
@@ -874,7 +898,8 @@ function renderCart(){
             "cartItems"
         );
 
-    if(!container)return;
+    if(!container) return;
+
 
     if(!cart.length){
 
@@ -883,71 +908,82 @@ function renderCart(){
 
         document.getElementById(
             "cartTotal"
-        ).textContent = "₹0";
+        ).textContent =
+            "₹0";
 
         return;
 
     }
 
+
     let total = 0;
+
 
     container.innerHTML =
         cart.map((item, index) => {
 
-            const p =
+            const product =
                 products.find(
-                    product =>
-                    product.id === item.id
+                    p =>
+                    p.id === item.id
                 );
 
-            if(!p)return "";
+            if(!product) return "";
 
-            const value =
-                Number(p.price || 0) *
-                Number(item.quantity || 0);
 
-            total += value;
+            const amount =
+                Number(
+                    product.price || 0
+                ) *
+                Number(
+                    item.quantity || 1
+                );
 
-            const sizeText =
-                item.size
-                ? `
-                    <p style="
-                        font-size:10px;
-                        color:#555;
-                        margin-top:4px
-                    ">
-                        Size: <b>${safe(item.size)}</b>
-                    </p>
-                  `
-                : "";
+
+            total += amount;
+
 
             return `
 
                 <div class="cart-item">
 
                     <img
-                        src="${safe(p.image)}"
+                        src="${safe(product.image)}"
                         alt=""
+                        onerror="
+                            this.src='https://placehold.co/200x250?text=DN'
+                        "
                     >
 
                     <div>
 
                         <h4>
-                            ${safe(p.name)}
+                            ${safe(product.name)}
                         </h4>
 
+                        ${
+                            item.size
+                            ? `
+                            <p>
+                                Size:
+                                <b>
+                                    ${safe(item.size)}
+                                </b>
+                            </p>
+                            `
+                            : ""
+                        }
+
                         <p>
-                            ₹${money(p.price)}
+                            ₹${money(product.price)}
                             × ${item.quantity}
                         </p>
-
-                        ${sizeText}
 
                     </div>
 
                     <button
                         class="remove"
-                        onclick="removeCart('${escapeAttr(p.id)}','${escapeAttr(item.size || "")}')"
+                        onclick="removeCart(${index})"
                     >
                         REMOVE
                     </button>
@@ -958,6 +994,7 @@ function renderCart(){
 
         }).join("");
 
+
     document.getElementById(
         "cartTotal"
     ).textContent =
@@ -966,17 +1003,13 @@ function renderCart(){
 }
 
 
-window.removeCart = function(id, size = ""){
+/* =====================================================
+   REMOVE CART ITEM
+===================================================== */
 
-    cart =
-        cart.filter(
-            item =>
-                !(
-                    item.id === id &&
-                    normalizeSize(item.size) ===
-                    normalizeSize(size)
-                )
-        );
+window.removeCart = function(index){
+
+    cart.splice(index, 1);
 
     saveCart();
 
@@ -985,6 +1018,95 @@ window.removeCart = function(id, size = ""){
     renderCart();
 
 };
+
+
+/* =====================================================
+   REFRESH CART AFTER FIREBASE UPDATE
+===================================================== */
+
+function refreshCartProducts(){
+
+    let changed = false;
+
+
+    cart = cart.filter(item => {
+
+        const product =
+            products.find(
+                p => p.id === item.id
+            );
+
+        if(!product){
+
+            changed = true;
+
+            return false;
+
+        }
+
+
+        const stock =
+            Number(
+                product.stock || 0
+            );
+
+
+        if(stock <= 0){
+
+            changed = true;
+
+            return false;
+
+        }
+
+
+        if(
+            item.quantity > stock
+        ){
+
+            item.quantity =
+                stock;
+
+            changed = true;
+
+        }
+
+
+        const sizes =
+            getProductSizes(product);
+
+
+        if(
+            item.size &&
+            sizes.length &&
+            !sizes.includes(
+                item.size
+            )
+        ){
+
+            /*
+               Do not silently delete the item.
+               Customer will see that the size
+               needs to be selected again.
+            */
+
+        }
+
+
+        return true;
+
+    });
+
+
+    if(changed){
+
+        saveCart();
+
+        updateCartCount();
+
+    }
+
+}
 
 
 /* =====================================================
@@ -1003,6 +1125,7 @@ window.openCheckout = function(){
 
     }
 
+
     if(!currentUser){
 
         closeCart();
@@ -1017,7 +1140,47 @@ window.openCheckout = function(){
 
     }
 
+
+    /*
+       Validate sizes before checkout.
+    */
+
+    for(const item of cart){
+
+        const product =
+            products.find(
+                p => p.id === item.id
+            );
+
+        if(!product) continue;
+
+        const sizes =
+            getProductSizes(product);
+
+
+        if(
+            sizes.length &&
+            !item.size
+        ){
+
+            closeCart();
+
+            openProduct(product.id);
+
+            toast(
+                `Select a size for ${product.name}.`
+            );
+
+            return;
+
+        }
+
+    }
+
+
     closeCart();
+
+    selectedPayment = null;
 
     renderCheckout();
 
@@ -1031,16 +1194,20 @@ function cartTotal(){
     return cart.reduce(
         (total, item) => {
 
-            const p =
+            const product =
                 products.find(
-                    product =>
-                    product.id === item.id
+                    p =>
+                    p.id === item.id
                 );
 
             return total +
                 (
-                    Number(p?.price || 0) *
-                    Number(item.quantity || 0)
+                    Number(
+                        product?.price || 0
+                    ) *
+                    Number(
+                        item.quantity || 0
+                    )
                 );
 
         },
@@ -1049,6 +1216,10 @@ function cartTotal(){
 
 }
 
+
+/* =====================================================
+   CHECKOUT SUMMARY
+===================================================== */
 
 function renderCheckout(){
 
@@ -1059,24 +1230,32 @@ function renderCheckout(){
             "checkoutItems"
         );
 
-    if(!box)return;
+    if(!box) return;
+
 
     box.innerHTML =
         cart.map(item => {
 
-            const p =
+            const product =
                 products.find(
-                    product =>
-                    product.id === item.id
+                    p =>
+                    p.id === item.id
                 );
 
-            if(!p)return "";
+            if(!product) return "";
+
 
             const amount =
-                Number(p.price || 0) *
-                Number(item.quantity || 0);
+                Number(
+                    product.price || 0
+                ) *
+                Number(
+                    item.quantity || 0
+                );
+
 
             total += amount;
+
 
             return `
 
@@ -1084,21 +1263,20 @@ function renderCheckout(){
 
                     <span>
 
-                        ${safe(p.name)}
-
-                        ×${item.quantity}
+                        ${safe(product.name)}
 
                         ${
                             item.size
-                            ? `<small style="
-                                display:block;
-                                color:#777;
-                                margin-top:3px
-                              ">
-                                Size: ${safe(item.size)}
-                               </small>`
+                            ? `
+                            <small>
+                                Size:
+                                ${safe(item.size)}
+                            </small>
+                            `
                             : ""
                         }
+
+                        ×${item.quantity}
 
                     </span>
 
@@ -1112,10 +1290,12 @@ function renderCheckout(){
 
         }).join("");
 
+
     document.getElementById(
         "checkoutTotal"
     ).textContent =
         "₹" + money(total);
+
 
     updateCOD(total);
 
@@ -1133,28 +1313,43 @@ function updateCOD(total){
             "codButton"
         );
 
-    if(!button)return;
+    const message =
+        document.getElementById(
+            "codMessage"
+        );
+
+
+    if(!button) return;
+
 
     if(total > 9999){
 
         button.disabled = true;
 
-        document.getElementById(
-            "codMessage"
-        ).textContent =
-            "Unavailable above ₹9,999";
+        if(message){
 
-        if(selectedPayment === "COD")
+            message.textContent =
+                "Unavailable above ₹9,999";
+
+        }
+
+
+        if(selectedPayment === "COD"){
+
             selectedPayment = null;
+
+        }
 
     }else{
 
         button.disabled = false;
 
-        document.getElementById(
-            "codMessage"
-        ).textContent =
-            "Available for eligible orders";
+        if(message){
+
+            message.textContent =
+                "Available for eligible orders";
+
+        }
 
     }
 
@@ -1162,13 +1357,14 @@ function updateCOD(total){
 
 
 /* =====================================================
-   PAYMENT
+   PAYMENT SELECTION
 ===================================================== */
 
 window.selectPayment = function(method){
 
     const total =
         cartTotal();
+
 
     if(
         method === "COD" &&
@@ -1183,35 +1379,64 @@ window.selectPayment = function(method){
 
     }
 
+
     selectedPayment = method;
 
-    document
-        .getElementById("upiButton")
-        .classList.remove("selected");
 
     document
-        .getElementById("codButton")
-        .classList.remove("selected");
+        .getElementById(
+            "upiButton"
+        )
+        ?.classList.remove(
+            "selected"
+        );
+
 
     document
-        .getElementById("upiBox")
-        .classList.add("hidden");
+        .getElementById(
+            "codButton"
+        )
+        ?.classList.remove(
+            "selected"
+        );
+
+
+    document
+        .getElementById(
+            "upiBox"
+        )
+        ?.classList.add(
+            "hidden"
+        );
+
 
     if(method === "UPI"){
 
         document
-            .getElementById("upiButton")
-            .classList.add("selected");
+            .getElementById(
+                "upiButton"
+            )
+            ?.classList.add(
+                "selected"
+            );
 
         document
-            .getElementById("upiBox")
-            .classList.remove("hidden");
+            .getElementById(
+                "upiBox"
+            )
+            ?.classList.remove(
+                "hidden"
+            );
 
     }else{
 
         document
-            .getElementById("codButton")
-            .classList.add("selected");
+            .getElementById(
+                "codButton"
+            )
+            ?.classList.add(
+                "selected"
+            );
 
     }
 
@@ -1234,8 +1459,10 @@ window.openUPI = function(){
 
     }
 
+
     const amount =
         cartTotal();
+
 
     const url =
         "upi://pay" +
@@ -1251,7 +1478,9 @@ window.openUPI = function(){
             "Drex Noire Order"
         );
 
-    window.location.href = url;
+
+    window.location.href =
+        url;
 
 };
 
@@ -1272,6 +1501,7 @@ window.placeOrder = async function(){
 
     }
 
+
     if(!cart.length){
 
         toast(
@@ -1282,6 +1512,7 @@ window.placeOrder = async function(){
 
     }
 
+
     if(!selectedPayment){
 
         toast(
@@ -1291,6 +1522,7 @@ window.placeOrder = async function(){
         return;
 
     }
+
 
     const name =
         document.getElementById(
@@ -1327,6 +1559,7 @@ window.placeOrder = async function(){
             "checkoutPin"
         ).value.trim();
 
+
     if(
         !name ||
         !email ||
@@ -1345,8 +1578,10 @@ window.placeOrder = async function(){
 
     }
 
+
     const total =
         cartTotal();
+
 
     if(
         selectedPayment === "COD" &&
@@ -1361,6 +1596,61 @@ window.placeOrder = async function(){
 
     }
 
+
+    /*
+       Final size validation.
+    */
+
+    for(const item of cart){
+
+        const product =
+            products.find(
+                p => p.id === item.id
+            );
+
+        if(!product) continue;
+
+
+        const sizes =
+            getProductSizes(product);
+
+
+        if(
+            sizes.length &&
+            !item.size
+        ){
+
+            toast(
+                `Select a size for ${product.name}.`
+            );
+
+            openProduct(product.id);
+
+            return;
+
+        }
+
+
+        if(
+            sizes.length &&
+            !sizes.includes(
+                item.size
+            )
+        ){
+
+            toast(
+                `Selected size is no longer available for ${product.name}.`
+            );
+
+            openProduct(product.id);
+
+            return;
+
+        }
+
+    }
+
+
     try{
 
         const orderRef =
@@ -1368,14 +1658,16 @@ window.placeOrder = async function(){
                 ref(db, "orders")
             );
 
+
         const items =
             cart.map(item => {
 
-                const p =
+                const product =
                     products.find(
-                        product =>
-                        product.id === item.id
+                        p =>
+                        p.id === item.id
                     );
+
 
                 return {
 
@@ -1383,23 +1675,23 @@ window.placeOrder = async function(){
                         item.id,
 
                     productName:
-                        p?.name || "",
+                        product?.name || "",
 
                     price:
                         Number(
-                            p?.price || 0
+                            product?.price || 0
                         ),
 
                     quantity:
                         Number(
-                            item.quantity || 0
+                            item.quantity || 1
                         ),
 
                     size:
                         item.size || "",
 
                     image:
-                        p?.image || ""
+                        product?.image || ""
 
                 };
 
@@ -1459,7 +1751,9 @@ window.placeOrder = async function(){
             {
 
                 name,
+
                 email,
+
                 phone,
 
                 lastOrderAt:
@@ -1475,17 +1769,23 @@ window.placeOrder = async function(){
 
         updateCartCount();
 
-        selectedPayment = null;
 
         toast(
             "Order placed successfully."
         );
 
+
         setTimeout(
-            () =>
-            showPage("orders"),
+            () => {
+
+                showPage(
+                    "orders"
+                );
+
+            },
             700
         );
+
 
     }catch(error){
 
@@ -1508,9 +1808,15 @@ window.openAuth = function(mode){
 
     authMode = mode;
 
+
     document
-        .getElementById("authModal")
-        .classList.add("show");
+        .getElementById(
+            "authModal"
+        )
+        .classList.add(
+            "show"
+        );
+
 
     document.getElementById(
         "authTitle"
@@ -1519,6 +1825,7 @@ window.openAuth = function(mode){
         ? "Login"
         : "Create Account";
 
+
     document.getElementById(
         "authSubmit"
     ).textContent =
@@ -1526,8 +1833,11 @@ window.openAuth = function(mode){
         ? "LOGIN"
         : "CREATE ACCOUNT";
 
+
     document
-        .getElementById("signupNameField")
+        .getElementById(
+            "signupNameField"
+        )
         .classList.toggle(
             "hidden",
             mode === "login"
@@ -1539,8 +1849,12 @@ window.openAuth = function(mode){
 window.closeAuth = function(){
 
     document
-        .getElementById("authModal")
-        .classList.remove("show");
+        .getElementById(
+            "authModal"
+        )
+        .classList.remove(
+            "show"
+        );
 
 };
 
@@ -1567,7 +1881,9 @@ window.submitAuth = async function(){
             "authError"
         );
 
+
     error.textContent = "";
+
 
     if(!email || !password){
 
@@ -1577,6 +1893,7 @@ window.submitAuth = async function(){
         return;
 
     }
+
 
     try{
 
@@ -1605,12 +1922,14 @@ window.submitAuth = async function(){
 
             }
 
+
             const result =
                 await createUserWithEmailAndPassword(
                     auth,
                     email,
                     password
                 );
+
 
             await set(
                 ref(
@@ -1624,6 +1943,7 @@ window.submitAuth = async function(){
                         result.user.uid,
 
                     name,
+
                     email,
 
                     createdAt:
@@ -1631,6 +1951,7 @@ window.submitAuth = async function(){
 
                 }
             );
+
 
             closeAuth();
 
@@ -1645,7 +1966,7 @@ window.submitAuth = async function(){
         console.error(e);
 
         error.textContent =
-            "Unable to complete authentication.";
+            getAuthError(e);
 
     }
 
@@ -1658,9 +1979,11 @@ window.submitAuth = async function(){
 
 onAuthStateChanged(
     auth,
+
     user => {
 
         currentUser = user;
+
 
         if(user){
 
@@ -1668,22 +1991,30 @@ onAuthStateChanged(
                 .getElementById(
                     "loggedOut"
                 )
-                .classList.add("hidden");
+                .classList.add(
+                    "hidden"
+                );
+
 
             document
                 .getElementById(
                     "loggedIn"
                 )
-                .classList.remove("hidden");
+                .classList.remove(
+                    "hidden"
+                );
+
 
             document.getElementById(
                 "accountEmail"
             ).textContent =
                 user.email;
 
+
             loadCustomer();
 
             loadOrders();
+
 
         }else{
 
@@ -1691,19 +2022,24 @@ onAuthStateChanged(
                 .getElementById(
                     "loggedOut"
                 )
-                .classList.remove("hidden");
+                .classList.remove(
+                    "hidden"
+                );
+
 
             document
                 .getElementById(
                     "loggedIn"
                 )
-                .classList.add("hidden");
+                .classList.add(
+                    "hidden"
+                );
+
 
             document.getElementById(
                 "accountEmail"
-            ).textContent = "";
-
-            orders = [];
+            ).textContent =
+                "";
 
         }
 
@@ -1712,12 +2048,13 @@ onAuthStateChanged(
 
 
 /* =====================================================
-   CUSTOMER
+   CUSTOMER DATA
 ===================================================== */
 
 function loadCustomer(){
 
-    if(!currentUser)return;
+    if(!currentUser) return;
+
 
     onValue(
         ref(
@@ -1725,16 +2062,26 @@ function loadCustomer(){
             "customers/" +
             currentUser.uid
         ),
+
         snapshot => {
 
             const data =
                 snapshot.val() || {};
 
-            document.getElementById(
-                "accountTitle"
-            ).textContent =
-                data.name ||
-                "Welcome";
+
+            const title =
+                document.getElementById(
+                    "accountTitle"
+                );
+
+            if(title){
+
+                title.textContent =
+                    data.name ||
+                    "Welcome";
+
+            }
+
 
             const name =
                 document.getElementById(
@@ -1751,18 +2098,30 @@ function loadCustomer(){
                     "checkoutPhone"
                 );
 
-            if(name)
+
+            if(name){
+
                 name.value =
                     data.name || "";
 
-            if(email)
+            }
+
+
+            if(email){
+
                 email.value =
                     data.email ||
                     currentUser.email;
 
-            if(phone)
+            }
+
+
+            if(phone){
+
                 phone.value =
                     data.phone || "";
+
+            }
 
         }
     );
@@ -1776,14 +2135,17 @@ function loadCustomer(){
 
 function loadOrders(){
 
-    if(!currentUser)return;
+    if(!currentUser) return;
+
 
     onValue(
         ref(db, "orders"),
+
         snapshot => {
 
             const data =
                 snapshot.val() || {};
+
 
             orders =
                 Object.entries(data)
@@ -1802,6 +2164,7 @@ function loadOrders(){
                     (a.createdAt || 0)
                 );
 
+
             renderOrders();
 
         }
@@ -1810,6 +2173,10 @@ function loadOrders(){
 }
 
 
+/* =====================================================
+   ORDER HISTORY
+===================================================== */
+
 function renderOrders(){
 
     const box =
@@ -1817,7 +2184,8 @@ function renderOrders(){
             "ordersContainer"
         );
 
-    if(!box)return;
+    if(!box) return;
+
 
     if(!currentUser){
 
@@ -1844,6 +2212,7 @@ function renderOrders(){
 
     }
 
+
     if(!orders.length){
 
         box.innerHTML = `
@@ -1869,17 +2238,25 @@ function renderOrders(){
 
     }
 
+
     box.innerHTML =
         orders.map(order => {
 
             const first =
                 order.items?.[0];
 
+
             const status =
                 String(
                     order.status ||
                     "Pending"
-                ).toLowerCase();
+                )
+                .toLowerCase();
+
+
+            const size =
+                first?.size || "";
+
 
             return `
 
@@ -1916,6 +2293,7 @@ function renderOrders(){
 
                     </div>
 
+
                     <div class="order-body">
 
                         <p>
@@ -1936,18 +2314,20 @@ function renderOrders(){
                             }
                         </p>
 
+
                         ${
-                            first?.size
+                            size
                             ? `
-                                <p>
-                                    Size:
-                                    <b>
-                                        ${safe(first.size)}
-                                    </b>
-                                </p>
-                              `
+                            <p>
+                                Size:
+                                <b>
+                                    ${safe(size)}
+                                </b>
+                            </p>
+                            `
                             : ""
                         }
+
 
                         <p>
                             Payment:
@@ -1955,6 +2335,7 @@ function renderOrders(){
                                 order.paymentMethod
                             )}
                         </p>
+
 
                         <p>
                             <b>
@@ -2006,7 +2387,7 @@ function money(value){
 
 function date(value){
 
-    if(!value)return "";
+    if(!value) return "";
 
     return new Date(
         Number(value)
@@ -2022,23 +2403,92 @@ function safe(value){
     return String(
         value ?? ""
     )
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
 }
 
 
-function escapeAttr(value){
+/*
+   Used when inserting size into
+   an HTML attribute.
+*/
+
+function safeAttr(value){
 
     return String(
         value ?? ""
     )
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, "&quot;");
+    .replace(
+        /\\/g,
+        "\\\\"
+    )
+    .replace(
+        /'/g,
+        "\\'"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    );
+
+}
+
+
+function getAuthError(error){
+
+    const code =
+        error?.code || "";
+
+
+    const messages = {
+
+        "auth/invalid-email":
+            "Please enter a valid email.",
+
+        "auth/user-not-found":
+            "No account found with this email.",
+
+        "auth/wrong-password":
+            "Incorrect password.",
+
+        "auth/invalid-credential":
+            "Incorrect email or password.",
+
+        "auth/email-already-in-use":
+            "An account already exists with this email.",
+
+        "auth/weak-password":
+            "Password is too weak.",
+
+        "auth/network-request-failed":
+            "Network error. Check your internet connection."
+
+    };
+
+
+    return (
+        messages[code] ||
+        "Unable to complete authentication."
+    );
 
 }
 
@@ -2050,16 +2500,32 @@ function toast(message){
             "toast"
         );
 
-    if(!t)return;
+    if(!t) return;
 
-    t.textContent = message;
 
-    t.classList.add("show");
+    t.textContent =
+        message;
 
-    setTimeout(
-        () =>
-        t.classList.remove("show"),
-        2500
+    t.classList.add(
+        "show"
     );
+
+
+    clearTimeout(
+        window.__toastTimer
+    );
+
+
+    window.__toastTimer =
+        setTimeout(
+            () => {
+
+                t.classList.remove(
+                    "show"
+                );
+
+            },
+            2500
+        );
 
 }
