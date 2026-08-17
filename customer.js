@@ -23,29 +23,26 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 /* =====================================================
    FIREBASE
-   ===================================================== */
+===================================================== */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB5xI2RaZvBV3OQH6zgJSRPJqNbr6l1wII",
-  authDomain: "drex-noire-f5906.firebaseapp.com",
-  databaseURL: "https://drex-noire-f5906-default-rtdb.firebaseio.com",
-  projectId: "drex-noire-f5906",
-  storageBucket: "drex-noire-f5906.firebasestorage.app",
-  messagingSenderId: "220525587244",
-  appId: "1:220525587244:web:446836a28b59395bcb5a89"
-}; 
-
+    apiKey: "AIzaSyB5xI2RaZvBV3OQH6zgJSRPJqNbr6l1wII",
+    authDomain: "drex-noire-f5906.firebaseapp.com",
+    databaseURL: "https://drex-noire-f5906-default-rtdb.firebaseio.com",
+    projectId: "drex-noire-f5906",
+    storageBucket: "drex-noire-f5906.firebasestorage.app",
+    messagingSenderId: "220525587244",
+    appId: "1:220525587244:web:446836a28b59395bcb5a89"
+};
 
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
-
 const db = getDatabase(app);
 
 
 /* =====================================================
    STATE
-   ===================================================== */
+===================================================== */
 
 let products = [];
 
@@ -55,21 +52,16 @@ let cart =
     );
 
 let currentUser = null;
-
 let selectedPayment = null;
-
 let upiId = "";
-
 let upiName = "Drex Noiré";
-
 let orders = [];
-
 let authMode = "login";
 
 
 /* =====================================================
    PAGE
-   ===================================================== */
+===================================================== */
 
 window.showPage = function(name){
 
@@ -80,55 +72,56 @@ window.showPage = function(name){
         );
 
     const page =
-        document.getElementById(
-            name + "Page"
-        );
+        document.getElementById(name + "Page");
 
     if(page){
 
         page.classList.add("active");
 
         window.scrollTo({
-            top:0,
-            behavior:"smooth"
+            top: 0,
+            behavior: "smooth"
         });
 
     }
 
     if(name === "orders")
         renderOrders();
-
 };
 
 
 /* =====================================================
    LOADER
-   ===================================================== */
+===================================================== */
 
-window.addEventListener("load",()=>{
+window.addEventListener("load", () => {
 
-    setTimeout(()=>{
+    setTimeout(() => {
 
         const loader =
             document.getElementById("loader");
 
-        loader.style.opacity="0";
+        if(loader){
 
-        setTimeout(()=>{
-            loader.remove();
-        },500);
+            loader.style.opacity = "0";
 
-    },600);
+            setTimeout(() => {
+                loader.remove();
+            }, 500);
+
+        }
+
+    }, 600);
 
 });
 
 
 /* =====================================================
-   PRODUCTS FROM REALTIME DATABASE
-   ===================================================== */
+   PRODUCTS
+===================================================== */
 
 onValue(
-    ref(db,"products"),
+    ref(db, "products"),
     snapshot => {
 
         const data =
@@ -136,11 +129,9 @@ onValue(
 
         products =
             Object.entries(data)
-            .map(([id,value])=>({
-
+            .map(([id, value]) => ({
                 id,
                 ...value
-
             }))
             .filter(
                 product =>
@@ -149,8 +140,22 @@ onValue(
 
         renderProducts();
 
-    },
+        /*
+         * Remove cart items whose products
+         * no longer exist.
+         */
+        cart =
+            cart.filter(item =>
+                products.some(
+                    product =>
+                    product.id === item.id
+                )
+            );
 
+        saveCart();
+        updateCartCount();
+
+    },
     error => {
 
         console.error(error);
@@ -164,11 +169,11 @@ onValue(
 
 
 /* =====================================================
-   UPI FROM FIREBASE
-   ===================================================== */
+   UPI
+===================================================== */
 
 onValue(
-    ref(db,"settings/store"),
+    ref(db, "settings/store"),
     snapshot => {
 
         const data =
@@ -181,14 +186,22 @@ onValue(
             data.upiName ||
             "Drex Noiré";
 
-        document.getElementById(
-            "upiDisplayName"
-        ).textContent = upiName;
+        const name =
+            document.getElementById(
+                "upiDisplayName"
+            );
 
-        document.getElementById(
-            "upiDisplayId"
-        ).textContent =
-            upiId || "UPI not configured";
+        const id =
+            document.getElementById(
+                "upiDisplayId"
+            );
+
+        if(name)
+            name.textContent = upiName;
+
+        if(id)
+            id.textContent =
+                upiId || "UPI not configured";
 
     }
 );
@@ -196,7 +209,7 @@ onValue(
 
 /* =====================================================
    PRODUCTS
-   ===================================================== */
+===================================================== */
 
 function renderProducts(){
 
@@ -211,117 +224,148 @@ function renderProducts(){
         document.getElementById(
             "featuredProducts"
         ),
-        products.slice(0,4)
+        products.slice(0, 4)
     );
 
 }
 
 
-function renderGrid(container,list){
+function renderGrid(container, list){
+
+    if(!container)return;
 
     if(!list.length){
 
-        container.innerHTML =
-            `<p style="padding:10px;color:#777;font-size:11px">
+        container.innerHTML = `
+            <p style="
+                padding:10px;
+                color:#777;
+                font-size:11px
+            ">
                 No products available.
-            </p>`;
+            </p>
+        `;
 
         return;
-
     }
 
     container.innerHTML =
-        list.map(product => `
+        list.map(product => {
 
-        <article class="product">
+            const stock =
+                Number(product.stock || 0);
 
-            <div
-                class="product-image"
-                onclick="openProduct('${product.id}')"
-            >
+            return `
 
-                <img
-                    src="${safe(product.image)}"
-                    alt=""
-                    onerror="this.style.display='none'"
+            <article class="product">
+
+                <div
+                    class="product-image"
+                    onclick="openProduct('${escapeAttr(product.id)}')"
                 >
 
-            </div>
+                    <img
+                        src="${safe(product.image)}"
+                        alt=""
+                        onerror="
+                            this.src='https://placehold.co/600x800?text=Drex+Noire'
+                        "
+                    >
 
-            <div class="product-info">
-
-                <small class="category">
-                    ${safe(product.category)}
-                </small>
-
-                <h3>
-                    ${safe(product.name)}
-                </h3>
-
-                <div class="price">
-                    ₹${money(product.price)}
                 </div>
 
-                <div class="stock">
-                    ${
-                        Number(product.stock || 0) > 0
-                        ? "In stock"
-                        : "Sold out"
-                    }
+                <div class="product-info">
+
+                    <small class="category">
+                        ${safe(product.category)}
+                    </small>
+
+                    <h3>
+                        ${safe(product.name)}
+                    </h3>
+
+                    <div class="price">
+                        ₹${money(product.price)}
+                    </div>
+
+                    <div class="stock">
+                        ${
+                            stock > 0
+                            ? "In stock"
+                            : "Sold out"
+                        }
+                    </div>
+
+                    <button
+                        class="product-action"
+                        onclick="openProduct('${escapeAttr(product.id)}')"
+                        ${stock <= 0 ? "disabled" : ""}
+                    >
+                        ${stock > 0
+                            ? "VIEW PRODUCT"
+                            : "SOLD OUT"
+                        }
+                    </button>
+
                 </div>
 
-                <button
-                    class="product-action"
-                    onclick="addToCart('${product.id}')"
-                    ${
-                        Number(product.stock || 0) <= 0
-                        ? "disabled"
-                        : ""
-                    }
-                >
-                    ADD TO BAG
-                </button>
+            </article>
 
-            </div>
+            `;
 
-        </article>
-
-        `).join("");
+        }).join("");
 
 }
 
 
 /* =====================================================
    SEARCH
-   ===================================================== */
+===================================================== */
 
-document
-.getElementById("searchInput")
-.addEventListener("input",filterProducts);
+const searchInput =
+    document.getElementById(
+        "searchInput"
+    );
 
-document
-.getElementById("categoryFilter")
-.addEventListener("change",filterProducts);
+const categoryFilter =
+    document.getElementById(
+        "categoryFilter"
+    );
+
+if(searchInput)
+    searchInput.addEventListener(
+        "input",
+        filterProducts
+    );
+
+if(categoryFilter)
+    categoryFilter.addEventListener(
+        "change",
+        filterProducts
+    );
 
 
 function filterProducts(){
 
     const search =
-        document.getElementById(
-            "searchInput"
-        ).value.toLowerCase();
+        (
+            document.getElementById(
+                "searchInput"
+            )?.value || ""
+        ).toLowerCase();
 
     const category =
         document.getElementById(
             "categoryFilter"
-        ).value;
+        )?.value || "all";
 
     const result =
         products.filter(product => {
 
             const name =
-                String(product.name || "")
-                .toLowerCase();
+                String(
+                    product.name || ""
+                ).toLowerCase();
 
             const matchesSearch =
                 name.includes(search);
@@ -348,24 +392,183 @@ function filterProducts(){
 
 
 /* =====================================================
+   SIZE HELPERS
+===================================================== */
+
+/*
+ * Supports several possible Firebase formats:
+ *
+ * sizes: ["S","M","L","XL"]
+ *
+ * sizes: {
+ *    S:true,
+ *    M:true,
+ *    L:true
+ * }
+ *
+ * sizes: {
+ *    S:"S",
+ *    M:"M"
+ * }
+ */
+
+function getProductSizes(product){
+
+    if(!product || product.sizes == null)
+        return [];
+
+    const sizes = product.sizes;
+
+    if(Array.isArray(sizes)){
+
+        return sizes
+            .map(size => String(size).trim())
+            .filter(Boolean);
+
+    }
+
+    if(typeof sizes === "object"){
+
+        return Object.entries(sizes)
+            .filter(([key,value]) => {
+
+                return (
+                    value === true ||
+                    value === 1 ||
+                    value === "true" ||
+                    value === key
+                );
+
+            })
+            .map(([key]) =>
+                String(key).trim()
+            )
+            .filter(Boolean);
+
+    }
+
+    if(typeof sizes === "string"){
+
+        return sizes
+            .split(",")
+            .map(size => size.trim())
+            .filter(Boolean);
+
+    }
+
+    return [];
+
+}
+
+
+function normalizeSize(size){
+
+    return String(
+        size || ""
+    ).trim();
+
+}
+
+
+/* =====================================================
    PRODUCT DETAIL
-   ===================================================== */
+===================================================== */
 
 window.openProduct = function(id){
 
     const p =
         products.find(
-            product => product.id === id
+            product =>
+            product.id === id
         );
 
     if(!p)return;
+
+    const sizes =
+        getProductSizes(p);
+
+    const stock =
+        Number(p.stock || 0);
+
+    let sizeHTML = "";
+
+    if(sizes.length){
+
+        sizeHTML = `
+
+            <div class="size-selector"
+                 style="margin:20px 0">
+
+                <div style="
+                    font-size:10px;
+                    font-weight:bold;
+                    letter-spacing:1px;
+                    margin-bottom:10px
+                ">
+                    SELECT SIZE
+                </div>
+
+                <div style="
+                    display:flex;
+                    flex-wrap:wrap;
+                    gap:8px
+                ">
+
+                    ${sizes.map(size => `
+
+                        <button
+                            type="button"
+                            class="size-option"
+                            data-size="${escapeAttr(size)}"
+                            onclick="selectSize('${escapeAttr(size)}')"
+                            style="
+                                min-width:48px;
+                                padding:12px 14px;
+                                border:1px solid #ccc;
+                                background:#fff;
+                                cursor:pointer;
+                                font-size:11px;
+                            "
+                        >
+                            ${safe(size)}
+                        </button>
+
+                    `).join("")}
+
+                </div>
+
+                <p
+                    id="sizeError"
+                    style="
+                        display:none;
+                        color:#a00000;
+                        font-size:10px;
+                        margin-top:8px
+                    "
+                >
+                    Please select a size.
+                </p>
+
+            </div>
+
+        `;
+
+    }
 
     document.getElementById(
         "productDetail"
     ).innerHTML = `
 
         <div class="detail-image">
-            <img src="${safe(p.image)}" alt="">
+
+            <img
+                src="${safe(p.image)}"
+                alt=""
+                onerror="
+                    this.src='https://placehold.co/600x800?text=Drex+Noire'
+                "
+            >
+
         </div>
 
         <div class="detail-info">
@@ -386,15 +589,24 @@ window.openProduct = function(id){
                 ${safe(p.description)}
             </p>
 
+            ${sizeHTML}
+
             <button
+                id="detailAddButton"
                 class="black-btn full"
-                onclick="addToCart('${p.id}')"
+                onclick="addSelectedProduct('${escapeAttr(p.id)}')"
+                ${stock <= 0 ? "disabled" : ""}
             >
-                ADD TO BAG
+                ${stock > 0
+                    ? "ADD TO BAG"
+                    : "SOLD OUT"
+                }
             </button>
 
         </div>
     `;
+
+    window.selectedProductSize = "";
 
     showPage("product");
 
@@ -402,8 +614,109 @@ window.openProduct = function(id){
 
 
 /* =====================================================
+   SIZE SELECTION
+===================================================== */
+
+window.selectedProductSize = "";
+
+
+window.selectSize = function(size){
+
+    window.selectedProductSize =
+        normalizeSize(size);
+
+    document
+        .querySelectorAll(".size-option")
+        .forEach(button => {
+
+            const selected =
+                button.dataset.size ===
+                window.selectedProductSize;
+
+            button.style.background =
+                selected
+                ? "#080808"
+                : "#fff";
+
+            button.style.color =
+                selected
+                ? "#fff"
+                : "#111";
+
+            button.style.borderColor =
+                selected
+                ? "#080808"
+                : "#ccc";
+
+        });
+
+    const error =
+        document.getElementById(
+            "sizeError"
+        );
+
+    if(error)
+        error.style.display = "none";
+
+};
+
+
+window.addSelectedProduct = function(id){
+
+    const product =
+        products.find(
+            p => p.id === id
+        );
+
+    if(!product)return;
+
+    const sizes =
+        getProductSizes(product);
+
+    /*
+     * If admin has specified sizes,
+     * customer MUST select one.
+     */
+    if(sizes.length){
+
+        const selected =
+            normalizeSize(
+                window.selectedProductSize
+            );
+
+        if(!selected){
+
+            const error =
+                document.getElementById(
+                    "sizeError"
+                );
+
+            if(error)
+                error.style.display = "block";
+
+            toast("Please select a size.");
+
+            return;
+        }
+
+        addToCart(id, selected);
+
+    }else{
+
+        /*
+         * Products without sizes remain
+         * compatible with your old products.
+         */
+        addToCart(id, "");
+
+    }
+
+};
+
+
+/* =====================================================
    CART
-   ===================================================== */
+===================================================== */
 
 function saveCart(){
 
@@ -419,14 +732,18 @@ function updateCartCount(){
 
     const count =
         cart.reduce(
-            (sum,item) =>
-            sum + item.quantity,
+            (sum, item) =>
+            sum + Number(item.quantity || 0),
             0
         );
 
-    document.getElementById(
-        "cartCount"
-    ).textContent = count;
+    const element =
+        document.getElementById(
+            "cartCount"
+        );
+
+    if(element)
+        element.textContent = count;
 
 }
 
@@ -434,7 +751,7 @@ function updateCartCount(){
 updateCartCount();
 
 
-window.addToCart = function(id){
+window.addToCart = function(id, size = ""){
 
     const product =
         products.find(
@@ -445,26 +762,70 @@ window.addToCart = function(id){
 
     if(Number(product.stock || 0) <= 0){
 
-        toast("This product is sold out.");
+        toast(
+            "This product is sold out."
+        );
 
         return;
 
     }
 
+    const sizes =
+        getProductSizes(product);
+
+    size =
+        normalizeSize(size);
+
+    if(sizes.length && !size){
+
+        toast(
+            "Please select a size."
+        );
+
+        return;
+
+    }
+
+    /*
+     * Same product with different sizes
+     * becomes a separate cart item.
+     */
     const item =
         cart.find(
-            item => item.id === id
+            item =>
+                item.id === id &&
+                normalizeSize(item.size) === size
         );
 
     if(item){
 
-        item.quantity++;
+        if(
+            item.quantity <
+            Number(product.stock || 0)
+        ){
+
+            item.quantity++;
+
+        }else{
+
+            toast(
+                "Maximum available stock reached."
+            );
+
+            return;
+
+        }
 
     }else{
 
         cart.push({
+
             id,
-            quantity:1
+
+            size,
+
+            quantity: 1
+
         });
 
     }
@@ -473,7 +834,11 @@ window.addToCart = function(id){
 
     updateCartCount();
 
-    toast("Added to bag.");
+    toast(
+        size
+        ? `Added to bag — ${size}`
+        : "Added to bag."
+    );
 
 };
 
@@ -483,7 +848,9 @@ window.openCart = function(){
     renderCart();
 
     document
-        .getElementById("cartOverlay")
+        .getElementById(
+            "cartOverlay"
+        )
         .classList.add("show");
 
 };
@@ -492,7 +859,9 @@ window.openCart = function(){
 window.closeCart = function(){
 
     document
-        .getElementById("cartOverlay")
+        .getElementById(
+            "cartOverlay"
+        )
         .classList.remove("show");
 
 };
@@ -504,6 +873,8 @@ function renderCart(){
         document.getElementById(
             "cartItems"
         );
+
+    if(!container)return;
 
     if(!cart.length){
 
@@ -518,10 +889,10 @@ function renderCart(){
 
     }
 
-    let total=0;
+    let total = 0;
 
     container.innerHTML =
-        cart.map(item => {
+        cart.map((item, index) => {
 
             const p =
                 products.find(
@@ -532,10 +903,23 @@ function renderCart(){
             if(!p)return "";
 
             const value =
-                Number(p.price || 0)
-                * item.quantity;
+                Number(p.price || 0) *
+                Number(item.quantity || 0);
 
             total += value;
+
+            const sizeText =
+                item.size
+                ? `
+                    <p style="
+                        font-size:10px;
+                        color:#555;
+                        margin-top:4px
+                    ">
+                        Size: <b>${safe(item.size)}</b>
+                    </p>
+                  `
+                : "";
 
             return `
 
@@ -557,11 +941,13 @@ function renderCart(){
                             × ${item.quantity}
                         </p>
 
+                        ${sizeText}
+
                     </div>
 
                     <button
                         class="remove"
-                        onclick="removeCart('${p.id}')"
+                        onclick="removeCart('${escapeAttr(p.id)}','${escapeAttr(item.size || "")}')"
                     >
                         REMOVE
                     </button>
@@ -580,11 +966,16 @@ function renderCart(){
 }
 
 
-window.removeCart = function(id){
+window.removeCart = function(id, size = ""){
 
     cart =
         cart.filter(
-            item => item.id !== id
+            item =>
+                !(
+                    item.id === id &&
+                    normalizeSize(item.size) ===
+                    normalizeSize(size)
+                )
         );
 
     saveCart();
@@ -598,13 +989,15 @@ window.removeCart = function(id){
 
 /* =====================================================
    CHECKOUT
-   ===================================================== */
+===================================================== */
 
 window.openCheckout = function(){
 
     if(!cart.length){
 
-        toast("Your bag is empty.");
+        toast(
+            "Your bag is empty."
+        );
 
         return;
 
@@ -636,7 +1029,7 @@ window.openCheckout = function(){
 function cartTotal(){
 
     return cart.reduce(
-        (total,item)=>{
+        (total, item) => {
 
             const p =
                 products.find(
@@ -646,8 +1039,8 @@ function cartTotal(){
 
             return total +
                 (
-                    Number(p?.price || 0)
-                    * item.quantity
+                    Number(p?.price || 0) *
+                    Number(item.quantity || 0)
                 );
 
         },
@@ -659,12 +1052,14 @@ function cartTotal(){
 
 function renderCheckout(){
 
-    let total=0;
+    let total = 0;
 
     const box =
         document.getElementById(
             "checkoutItems"
         );
+
+    if(!box)return;
 
     box.innerHTML =
         cart.map(item => {
@@ -678,8 +1073,8 @@ function renderCheckout(){
             if(!p)return "";
 
             const amount =
-                Number(p.price || 0)
-                * item.quantity;
+                Number(p.price || 0) *
+                Number(item.quantity || 0);
 
             total += amount;
 
@@ -688,8 +1083,23 @@ function renderCheckout(){
                 <div class="summary-item">
 
                     <span>
+
                         ${safe(p.name)}
+
                         ×${item.quantity}
+
+                        ${
+                            item.size
+                            ? `<small style="
+                                display:block;
+                                color:#777;
+                                margin-top:3px
+                              ">
+                                Size: ${safe(item.size)}
+                               </small>`
+                            : ""
+                        }
+
                     </span>
 
                     <b>
@@ -697,6 +1107,7 @@ function renderCheckout(){
                     </b>
 
                 </div>
+
             `;
 
         }).join("");
@@ -711,6 +1122,10 @@ function renderCheckout(){
 }
 
 
+/* =====================================================
+   COD
+===================================================== */
+
 function updateCOD(total){
 
     const button =
@@ -718,18 +1133,23 @@ function updateCOD(total){
             "codButton"
         );
 
+    if(!button)return;
+
     if(total > 9999){
 
-        button.disabled=true;
+        button.disabled = true;
 
         document.getElementById(
             "codMessage"
         ).textContent =
             "Unavailable above ₹9,999";
 
+        if(selectedPayment === "COD")
+            selectedPayment = null;
+
     }else{
 
-        button.disabled=false;
+        button.disabled = false;
 
         document.getElementById(
             "codMessage"
@@ -743,7 +1163,7 @@ function updateCOD(total){
 
 /* =====================================================
    PAYMENT
-   ===================================================== */
+===================================================== */
 
 window.selectPayment = function(method){
 
@@ -763,7 +1183,7 @@ window.selectPayment = function(method){
 
     }
 
-    selectedPayment=method;
+    selectedPayment = method;
 
     document
         .getElementById("upiButton")
@@ -800,7 +1220,7 @@ window.selectPayment = function(method){
 
 /* =====================================================
    UPI
-   ===================================================== */
+===================================================== */
 
 window.openUPI = function(){
 
@@ -831,20 +1251,22 @@ window.openUPI = function(){
             "Drex Noire Order"
         );
 
-    window.location.href=url;
+    window.location.href = url;
 
 };
 
 
 /* =====================================================
    PLACE ORDER
-   ===================================================== */
+===================================================== */
 
 window.placeOrder = async function(){
 
     if(!currentUser){
 
-        toast("Login required.");
+        toast(
+            "Login required."
+        );
 
         return;
 
@@ -852,7 +1274,9 @@ window.placeOrder = async function(){
 
     if(!cart.length){
 
-        toast("Your bag is empty.");
+        toast(
+            "Your bag is empty."
+        );
 
         return;
 
@@ -941,7 +1365,7 @@ window.placeOrder = async function(){
 
         const orderRef =
             push(
-                ref(db,"orders")
+                ref(db, "orders")
             );
 
         const items =
@@ -955,16 +1379,24 @@ window.placeOrder = async function(){
 
                 return {
 
-                    productId:item.id,
+                    productId:
+                        item.id,
 
                     productName:
                         p?.name || "",
 
                     price:
-                        Number(p?.price || 0),
+                        Number(
+                            p?.price || 0
+                        ),
 
                     quantity:
-                        item.quantity,
+                        Number(
+                            item.quantity || 0
+                        ),
+
+                    size:
+                        item.size || "",
 
                     image:
                         p?.image || ""
@@ -972,6 +1404,7 @@ window.placeOrder = async function(){
                 };
 
             });
+
 
         await set(
             orderRef,
@@ -1007,7 +1440,8 @@ window.placeOrder = async function(){
                     ? "Pending"
                     : "Manual Verification",
 
-                status:"Pending",
+                status:
+                    "Pending",
 
                 createdAt:
                     Date.now()
@@ -1025,9 +1459,7 @@ window.placeOrder = async function(){
             {
 
                 name,
-
                 email,
-
                 phone,
 
                 lastOrderAt:
@@ -1037,18 +1469,21 @@ window.placeOrder = async function(){
         );
 
 
-        cart=[];
+        cart = [];
 
         saveCart();
 
         updateCartCount();
+
+        selectedPayment = null;
 
         toast(
             "Order placed successfully."
         );
 
         setTimeout(
-            () => showPage("orders"),
+            () =>
+            showPage("orders"),
             700
         );
 
@@ -1067,11 +1502,11 @@ window.placeOrder = async function(){
 
 /* =====================================================
    AUTH
-   ===================================================== */
+===================================================== */
 
-window.openAuth=function(mode){
+window.openAuth = function(mode){
 
-    authMode=mode;
+    authMode = mode;
 
     document
         .getElementById("authModal")
@@ -1101,7 +1536,7 @@ window.openAuth=function(mode){
 };
 
 
-window.closeAuth=function(){
+window.closeAuth = function(){
 
     document
         .getElementById("authModal")
@@ -1110,7 +1545,7 @@ window.closeAuth=function(){
 };
 
 
-window.submitAuth=async function(){
+window.submitAuth = async function(){
 
     const email =
         document.getElementById(
@@ -1132,11 +1567,20 @@ window.submitAuth=async function(){
             "authError"
         );
 
-    error.textContent="";
+    error.textContent = "";
+
+    if(!email || !password){
+
+        error.textContent =
+            "Enter your email and password.";
+
+        return;
+
+    }
 
     try{
 
-        if(authMode==="login"){
+        if(authMode === "login"){
 
             await signInWithEmailAndPassword(
                 auth,
@@ -1146,7 +1590,9 @@ window.submitAuth=async function(){
 
             closeAuth();
 
-            toast("Welcome back.");
+            toast(
+                "Welcome back."
+            );
 
         }else{
 
@@ -1178,7 +1624,6 @@ window.submitAuth=async function(){
                         result.user.uid,
 
                     name,
-
                     email,
 
                     createdAt:
@@ -1209,13 +1654,13 @@ window.submitAuth=async function(){
 
 /* =====================================================
    AUTH STATE
-   ===================================================== */
+===================================================== */
 
 onAuthStateChanged(
     auth,
     user => {
 
-        currentUser=user;
+        currentUser = user;
 
         if(user){
 
@@ -1256,7 +1701,9 @@ onAuthStateChanged(
 
             document.getElementById(
                 "accountEmail"
-            ).textContent="";
+            ).textContent = "";
+
+            orders = [];
 
         }
 
@@ -1266,7 +1713,7 @@ onAuthStateChanged(
 
 /* =====================================================
    CUSTOMER
-   ===================================================== */
+===================================================== */
 
 function loadCustomer(){
 
@@ -1289,21 +1736,33 @@ function loadCustomer(){
                 data.name ||
                 "Welcome";
 
-            document.getElementById(
-                "checkoutName"
-            ).value =
-                data.name || "";
+            const name =
+                document.getElementById(
+                    "checkoutName"
+                );
 
-            document.getElementById(
-                "checkoutEmail"
-            ).value =
-                data.email ||
-                currentUser.email;
+            const email =
+                document.getElementById(
+                    "checkoutEmail"
+                );
 
-            document.getElementById(
-                "checkoutPhone"
-            ).value =
-                data.phone || "";
+            const phone =
+                document.getElementById(
+                    "checkoutPhone"
+                );
+
+            if(name)
+                name.value =
+                    data.name || "";
+
+            if(email)
+                email.value =
+                    data.email ||
+                    currentUser.email;
+
+            if(phone)
+                phone.value =
+                    data.phone || "";
 
         }
     );
@@ -1313,12 +1772,14 @@ function loadCustomer(){
 
 /* =====================================================
    ORDERS
-   ===================================================== */
+===================================================== */
 
 function loadOrders(){
 
+    if(!currentUser)return;
+
     onValue(
-        ref(db,"orders"),
+        ref(db, "orders"),
         snapshot => {
 
             const data =
@@ -1326,17 +1787,17 @@ function loadOrders(){
 
             orders =
                 Object.entries(data)
-                .map(([id,value])=>({
+                .map(([id, value]) => ({
                     id,
                     ...value
                 }))
                 .filter(
                     order =>
                     order.userId ===
-                    currentUser?.uid
+                    currentUser.uid
                 )
                 .sort(
-                    (a,b)=>
+                    (a,b) =>
                     (b.createdAt || 0) -
                     (a.createdAt || 0)
                 );
@@ -1356,13 +1817,17 @@ function renderOrders(){
             "ordersContainer"
         );
 
+    if(!box)return;
+
     if(!currentUser){
 
-        box.innerHTML=`
+        box.innerHTML = `
 
             <div class="account">
 
-                <h3>Login to view orders.</h3>
+                <h3>
+                    Login to view orders.
+                </h3>
 
                 <button
                     class="black-btn full"
@@ -1372,6 +1837,7 @@ function renderOrders(){
                 </button>
 
             </div>
+
         `;
 
         return;
@@ -1380,11 +1846,13 @@ function renderOrders(){
 
     if(!orders.length){
 
-        box.innerHTML=`
+        box.innerHTML = `
 
             <div class="account">
 
-                <h3>No orders yet.</h3>
+                <h3>
+                    No orders yet.
+                </h3>
 
                 <button
                     class="black-btn full"
@@ -1394,6 +1862,7 @@ function renderOrders(){
                 </button>
 
             </div>
+
         `;
 
         return;
@@ -1437,7 +1906,7 @@ function renderOrders(){
 
                         <div class="
                             status
-                            ${status}
+                            ${safe(status)}
                         ">
                             ${safe(
                                 order.status ||
@@ -1452,18 +1921,33 @@ function renderOrders(){
                         <p>
                             ${
                                 first
-                                ? safe(first.productName)
+                                ? safe(
+                                    first.productName
+                                  )
                                 : "Order"
                             }
 
                             ${
                                 order.items?.length > 1
                                 ? ` + ${
-                                    order.items.length-1
+                                    order.items.length - 1
                                   } more`
                                 : ""
                             }
                         </p>
+
+                        ${
+                            first?.size
+                            ? `
+                                <p>
+                                    Size:
+                                    <b>
+                                        ${safe(first.size)}
+                                    </b>
+                                </p>
+                              `
+                            : ""
+                        }
 
                         <p>
                             Payment:
@@ -1474,14 +1958,15 @@ function renderOrders(){
 
                         <p>
                             <b>
-                            Total:
-                            ₹${money(order.total)}
+                                Total:
+                                ₹${money(order.total)}
                             </b>
                         </p>
 
                     </div>
 
                 </article>
+
             `;
 
         }).join("");
@@ -1491,20 +1976,22 @@ function renderOrders(){
 
 /* =====================================================
    LOGOUT
-   ===================================================== */
+===================================================== */
 
-window.logout=async function(){
+window.logout = async function(){
 
     await signOut(auth);
 
-    toast("Logged out.");
+    toast(
+        "Logged out."
+    );
 
 };
 
 
 /* =====================================================
    HELPERS
-   ===================================================== */
+===================================================== */
 
 function money(value){
 
@@ -1519,8 +2006,7 @@ function money(value){
 
 function date(value){
 
-    if(!value)
-        return "";
+    if(!value)return "";
 
     return new Date(
         Number(value)
@@ -1536,11 +2022,23 @@ function safe(value){
     return String(
         value ?? ""
     )
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+function escapeAttr(value){
+
+    return String(
+        value ?? ""
+    )
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;");
 
 }
 
@@ -1552,12 +2050,15 @@ function toast(message){
             "toast"
         );
 
-    t.textContent=message;
+    if(!t)return;
+
+    t.textContent = message;
 
     t.classList.add("show");
 
     setTimeout(
-        ()=>t.classList.remove("show"),
+        () =>
+        t.classList.remove("show"),
         2500
     );
 
